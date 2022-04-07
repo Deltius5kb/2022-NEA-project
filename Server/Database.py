@@ -188,13 +188,21 @@ class DatabaseHandler:
         #Uses bcrypt library to check password against hash
         return CheckPW(password, correctPasswordHash)
 
-# players = [200,400,600,800,1000,1200,1400,1600,1800,2000,2200]
 
-# dbHandler = DatabaseHandler()
-# # # player = Player(None, None)
-# # # player.username = "Username0"
+# # player = Player(None, None)
+# # player.username = "Username0"
 
-# # # dbHandler.LoadUser(player)
+# # dbHandler.LoadUser(player)
+dbHandler = DatabaseHandler()
 
-# for player in players:
-#     dbHandler.CreateNewUser(player, f"{player}")
+player1 = Player(None, None)
+player1.username = "300"
+player1.Elo = 300
+player2 = Player(None, None)
+player2.username = "900"
+player2.Elo = 900
+
+dbHandler.CreateNewUser("900", "900")
+
+dbHandler.SaveUser(player1)
+dbHandler.SaveUser(player2)

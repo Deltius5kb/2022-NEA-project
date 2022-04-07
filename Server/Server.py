@@ -191,7 +191,6 @@ class Server:
                         player.loggedIn = True
                         data = self.dbHandler.LoadUser(player)
                         player.msgsToSend.Enqueue("!REGISTEREDSUCCESFULLY")
-                        player.msgsTosend.Enqueue(pickle.dumps(data))
                     except:
                         player.msgsToSend.Enqueue("!ANERROROCCURRED")
                 elif message == "!STATISTICS":

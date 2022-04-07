@@ -9,7 +9,7 @@ def CheckPW(password, hashedPassword):
 def GenHash(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
-# password = "Password0"
-# hashed = GenHash(password)
+password = "Password0"
+hashed = GenHash(password)
 
-# print(CheckPW(password, hashed))
+print(CheckPW(password, hashed))
