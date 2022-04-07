@@ -390,7 +390,7 @@ class RegisterScreen(Scene):
                     self.__passwordBox.SetInactive()
                     self.__confirmBox.SetActive()
                 elif self.__confirmBox.isActive:
-                    self.__confirmBox.SetInactive
+                    self.__confirmBox.SetInactive()
                     self.__usernameBox.SetActive()
                 self._inputHandler.inputsList.pop(i)
             else:
@@ -594,12 +594,18 @@ class StatisticsScreen(Scene):
         #Find WPM
         wordsTyped = data[2]
         timePlayed = data[3]
-        avgWPM = round(wordsTyped / timePlayed, 2)
+        if timePlayed > 0:
+            avgWPM = round(wordsTyped / timePlayed, 2)
+        else:
+            avgWPM = 0
 
         #Winrate
         gamesWon = data[6]
         gamesPlayed = data[7]
-        winrate = round(gamesWon / gamesPlayed * 100, 2)
+        if gamesPlayed > 0:
+            winrate = round(gamesWon / gamesPlayed * 100, 2)
+        else:
+            winrate = 0
 
         #Just data
         longestStreak = data[8]

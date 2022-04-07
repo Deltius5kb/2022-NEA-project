@@ -187,6 +187,8 @@ class Server:
                     player.username = details[0]
                     try:
                         self.dbHandler.CreateNewUser(details[0], details[1])
+                        player.username = details[0]
+                        player.loggedIn = True
                         data = self.dbHandler.LoadUser(player)
                         player.msgsToSend.Enqueue("!REGISTEREDSUCCESFULLY")
                         player.msgsTosend.Enqueue(pickle.dumps(data))
