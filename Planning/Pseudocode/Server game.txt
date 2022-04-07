@@ -1,0 +1,26 @@
+CLASS Game
+    SUBROUTINE init(self, player1, player2)
+        self.started <-- False
+        self.player1 <-- player1
+        self.player2 <-- player2
+
+        self.__dbHandler <-- None
+        self.__gameThread <-- Thread object
+        self.__timerStage <-- None
+        self.__raceStage <-- None
+    ENDSUBROUTINE
+
+    SUBROUTINE __Run(self)
+        self.__dbHandler <-- DatabaseHandler()
+        self.__timerStage <-- TimerStage(self.player1, self.player2)
+        WHILE NOT self.__timerStage.timerFinished
+            self.__timerStage.main()
+        ENDWHILE
+
+        textForPlayersToType <-- self.__timerStage.textForPlayersToType
+        self.__raceStage <-- Race(self.player1, self.player2, textForPlayersToType, self.__dbHandler)
+        WHILE NOT self.__raceStage.raceFinished
+            self.__raceStage.main()
+        ENDWHILE
+    ENDSUBROUTINE
+ENDCLASS

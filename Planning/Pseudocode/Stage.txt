@@ -1,0 +1,35 @@
+CLASS Stage
+    SUBROUTINE (self, player1, player2)
+        self._clock <-- pygame Clock object
+        self._player1 <-- player1
+        self._player2 <-- player2
+        self._players <-- [self._player1, self._player2]
+    ENDSUBROUTINE
+
+    SUBROUTINE main(self)
+        self._clock.tick()
+        self._HandleMessages()
+    ENDSUBROUTINE
+
+    SUBROUTINE _HandleMessages(self)
+        FOR player IN self._players
+            unusedMessages <-- []
+            WHILE player.msgsReceived.GetLength() <> 0
+                message <-- player.msgsReceived.Dequeue()
+                IF message = "!DISCONNECT" THEN
+                    player.playerQuit <-- True
+                ELSE
+                    unusedMessages.APPEND(message)
+                ENDIF
+            ENDWHILE
+            FOR message IN unusedMessages
+                player.msgsReceived.Enqueue(message)
+            ENDFOR
+        ENDFOR
+    ENDSUBROUTINE
+
+    SUBROUTINE _SendMessageToBothPlayers(self, messageToSend)
+        self._player1.msgsToSend.Enqueue(messageToSend)
+        self._player2.msgsToSend.Enqueue(messageToSend)
+    ENDSUBROUTINE
+ENDCLASS

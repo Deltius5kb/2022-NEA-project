@@ -1,0 +1,28 @@
+CLASS TimerStage(Stage)
+    SUBROUTINE init(self, player1, player2)
+        Inherit from Stage
+        self.timerFinished <-- False
+        #Attribute for timer in seconds
+        self.timeUntilStart <-- 5
+        self.__timeSinceLastMessage <-- 0
+        self._SendMessageToBothPlayers("!STARTTIMER")
+        self._SendMessageToBothPlayers("!TIMELEFT:" + INT_TO_STRING(self.timeUntilStart))
+
+        #Word generation
+        self.__wordGenerator <-- WordGenerator object
+        self.textForPlayersToType <-- self.__wordGenerator.GetWordsForProgram(500)
+    ENDSUBROUTINE
+
+    SUBROUTINE main(self)
+        Inherit from Stage
+        self.__timeSinceLastMessage <-- self.__timeSinceLastMessage + time since last frame
+        IF self.timeUntilStart = 0 THEN
+            self.timerFinished <-- True
+            self._SendMessageToBothPlayers("!TEXTTOWRITE:" + self.textForPlayersToType)
+        ELSE IF self.__timeSinceLastMessage >= 1000 THEN
+            self.__timeSinceLastMessage <-- self.__timeSinceLastMessage - 1000
+            self.timeUntilStart <-- self.timeUntilStart - 1
+            self._SendMessageToBothPlayers("!TIMELEFT:" + INT_TO_STRING(self.timeUntilStart))
+        ENDIF
+    ENDSUBROUTINE
+ENDCLASS

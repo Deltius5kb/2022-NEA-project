@@ -1,0 +1,182 @@
+CLASS Race(Stage)
+    SUBROUTINE (self, player1, player2, textPlayersHaveToType, databaseHandler)
+        Inherit from Stage
+        self.raceFinished <-- False
+        self.__waitingForPlayersText <-- False
+        self.timeUntilEnd <-- 30
+        self.__timeSinceLastTimerUpdate <-- 0
+        self.__textPlayersHaveToType <-- textPlayersHaveToType
+        self.__player1FinalText <-- None
+        self.__player2FinalText <-- None
+
+        self.__player1TimeFinished <-- None
+        self.__player2TimeFinished <-- None
+
+        self.__dbHandler <-- databaseHandler
+    ENDSUBROUTINE
+
+    SUBROUTINE main(self)
+        Inherit from Stage
+
+        self.__timeSinceLastTimerUpdate <-- self.__timeSinceLastTimerUpdate + time since last frame
+
+        IF self.__timeSinceLastTimerUpdate >= 1000 AND NOT self.__waitingForPlayersText THEN
+            self.timeUntilEnd <-- self.timeUntilEnd - 1
+            self.__timeSinceLastTimerUpdate <-- self.__timeSinceLastTimerUpdate - 1000
+            self._SendMessageToBothPlayers("!TIMELEFT:" + STRING_TO_INT(self.timeUntilEnd))
+            IF self.timeUntilEnd = 0 THEN
+                self._SendMessageToBothPlayers("!GAMECOMPLETE")
+                self.__waitingForPlayersText = True
+            ENDIF
+        ENDIF
+
+        FOR player IN self._players
+            IF LEN(player.textWritten) = LEN(self.__textPlayersHaveToType) THEN
+                OUTPUT "A player has won"
+
+        IF self.__player1FinalText IS NOT None AND self.__player2FinalText IS NOT None THEN
+            self._SendMessageToBothPlayers("!GAMECOMPLETED")
+            self.raceFinished <-- True
+            self.__UpdatePlayers()
+        ENDIF
+    ENDSUBROUTINE
+
+    #This method calculates the players' new stats
+    SUBROUTINE __UpdatePlayers(self)
+        self._player1.wordsTyped <-- self._player1.wordsTyped + LEN(self.__player1FinalText.split(" "))
+        self._player2.wordsTyped <-- self._player2.wordsTyped + LEN(self.__player2FinalText.split(" "))
+
+        self._player1.timePlayed <-- self._player1.timePlayed + self.__player1TimeFinished
+        self._player2.timePlayed <-- self._player2.timePlayed + self.__player2TimeFinished
+
+        #Find number of letters each player got correct
+        player1LettersCorrect <-- 0
+        FOR i IN RANGE(LEN(self.__player1FinalText))
+            self._player1.lettersTyped <-- self._player1.lettersTyped + 1
+            IF self.__player1FinalText[i] = self.__textPlayersHaveToType[i] THEN
+                player1LettersCorrect <-- player1LettersCorrect + 1
+                self._player1.lettersTypedCorrectly <-- self._player1.lettersTypedCorrectly + 1
+            ENDIF
+        ENDFOR
+
+        player2LettersCorrect <-- 0
+        FOR i IN RANGE(LEN(self.__player2FinalText))
+            self._player2.lettersTyped <-- self._player2.lettersTyped + 1
+            IF self.__player2FinalText[i] = self.__textPlayersHaveToType[i] THEN
+                player2LettersCorrect <-- player2LettersCorrect + 1
+                self._player2.lettersTypedCorrectly <-- self._player2.lettersTypedCorrectly + 1
+            ENDIF
+        ENDFOR
+
+        #Determine winner
+        IF player1LettersCorrect = player2LettersCorrect THEN
+            IF self.__player1TimeFinished = self.__player2TimeFinished THEN
+                #Game is a draw
+                winner <-- None
+                loser <-- None
+            ELSE IF self.__player1TimeFinished < self.__player2TimeFinished THEN
+                winner <-- self._player1
+                loser <-- self._player2
+            ELSE
+                winner <-- self._player2
+                loser <-- self._player2
+        ELSE IF player1LettersCorrect > player2LettersCorrect THEN
+            winner <-- self._player1
+            winMargin <-- player1LettersCorrect - player2LettersCorrect
+            if winMargin > winner.largestWinMargin:
+                winner.largestWinMargin <-- winMargin
+            loser <-- self._player2
+        ELSE
+            winner <-- self._player2
+            winMargin <-- player2LettersCorrect - player1LettersCorrect
+            IF winMargin > winner.largestWinMargin THEN
+                winner.largestWinMargin <-- winMargin
+            ENDIF
+            loser <-- self._player1
+        ENDIF
+
+        IF winner IS NOT None THEN
+            winner.msgsToSend.Enqueue("!MATCHOUTCOME:WIN")
+            loser.msgsToSend.Enqueue("!MATCHOUTCOME:LOSS")
+
+            winner.msgsToSend.Enqueue(f"!MARGIN:{winMargin}")
+            loser.msgsToSend.Enqueue(f"!MARGIN:{winMargin}")
+
+            winner.gamesWon <-- winner.gamesWon + 1
+            winner.gamesPlayed <-- winner.gamesPlayed + 1
+            winner.currentWinstreak <-- winner.currentWinstreak + 1
+            IF winner.currentWinstreak > winner.longestStreak THEN
+                winner.longestStreak <-- winner.currentWinstreak
+
+            loser.gamesPlayed <-- loser.gamesPlayed +  1
+            loser.currentWinstreak <-- 0
+
+            winner.sumOfOpponentsElo <-- winner.sumOfOpponentsElo + loser.Elo
+            loser.sumOfOpponentsElo <-- loser.sumOfOpponentsElo + winner.Elo
+
+            winnerGamesLost <-- winner.gamesPlayed - winner.gamesWon
+            #This is the formula for calculating PR (Performance Rating) increase
+            EloDiff <-- (winner.sumOfOpponentsElo + 400 * (winner.gamesWon - winnerGamesLost)) / winner.gamesPlayed - winner.Elo
+            winner.msgsToSend.Enqueue("!ELO:" + EloDiff)
+            winner.Elo <-- winner.Elo EloDiff
+            IF winner.Elo > winner.highestElo THEN
+                winner.highestElo <-- winner.Elo
+            ENDIF
+
+            loserGamesLost <-- loser.gamesPlayed - loser.gamesWon
+            EloDiff <-- loser.Elo - (loser.sumOfOpponentsElo + 400 * (loser.gamesWon - loserGamesLost)) / loser.gamesPlayed
+            loser.msgsToSend.Enqueue("!ELO:" + EloDiff)
+            loser.Elo <-- loser.Elo - EloDiff
+        ELSE
+            self._SendMessageToBothPlayers("!MATCHOUTCOME:DRAW")
+        ENDIF
+
+        #Updates database
+        self.__dbHandler.SaveUser(self._player1)
+        self.__dbHandler.SaveUser(self._player2)
+
+        self._player1.gameFinished <-- True
+        self._player2.gameFinished <-- True
+    ENDSUBROUTINE
+    SUBROUTINE _HandleMessages(self)
+        Inherit from Stage
+
+        unusedMessages <-- []
+        WHILE self._player1.msgsReceived.GetLength() <> 0
+            message <-- self._player1.msgsReceived.Dequeue()
+            IF message[:6] = "!TEXT:" THEN
+                text <-- message[6:]
+                self._player1.textWritten <-- text
+                self._player2.msgsToSend.Enqueue("!OTHERPLAYERTEXT:" + self._player1.textWritten)
+            ELSE IF message[:11] = "!FINALTEXT:" THEN
+                self.__player1FinalText <-- message[11:]
+                self.__player1TimeFinished <-- 30 - self.timeUntilEnd
+            ELSE:
+                unusedMessages.APPEND(message)        
+            ENDIF
+        ENDWHILE
+        FOR message IN unusedMessages
+            self._player1.msgsReceived.Enqueue(message)
+        ENDFOR
+
+        #For player2
+        unusedMessages <-- []
+        WHILE self._player2.msgsReceived.GetLength() <> 0
+            message = self._player2.msgsReceived.Dequeue()
+            IF message[:6] = "!TEXT:" THEN
+                text <-- message[6:]
+                self._player2.textWritten <-- text
+                self._player1.msgsToSend.Enqueue("!OTHERPLAYERTEXT:" + self._player2.textWritten)
+            ELSE IF message[:11] = "!FINALTEXT:" THEN
+                self.__player2FinalText <-- message[11:]
+                self.__player2TimeFinished <-- 30 - self.timeUntilEnd
+            ELSE:
+                unusedMessages.APPEND(message)        
+            ENDIF
+        ENDWHILE
+
+        FOR message IN unusedMessages:
+            self._player2.msgsReceived.Enqueue(message)
+        ENDFOR
+    ENDSUBROUTINE
+ENDCLASS

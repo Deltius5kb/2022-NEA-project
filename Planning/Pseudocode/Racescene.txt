@@ -1,0 +1,136 @@
+CLASS RaceScene(Scene)
+    SUBROUTINE init(self, window, resolution, previewText, socket=None)
+        Inherit from Scene
+        self.playerFinished <-- False
+        self.gameOver <-- False
+        #Colours for textbox        
+        colourActive <-- (40,40,40)
+        colourInactive <-- (25,25,25)
+        previewTextColour <-- (160,160,160)
+        incorrectTextColour <-- (255,0,0)
+
+        #Main textbox
+        textBoxFont <-- pygame Font object
+
+        textBoxSize <-- 2/5th the width of the screen and 50 pixels tall
+        textBoxLocation <-- centred on x and 250 pixels down
+        textBoxRect <-- pygame Rect object
+        self.__textBox <-- TextBox object
+
+        #Other player textbox
+        textBoxLocation <-- centred on x and 250 pixels up
+        textBoxRect <-- pygame Rect object
+        self.__opponentTextBox <-- TextBox object
+
+        self._listOfBoxObjects <-- [self.__textBox, self.__opponentTextBox]
+
+        self.timerFinished <-- False
+        self.__font <-- pygame Font object
+
+        #Text for timer
+        textSize <-- size of "30" when rendered
+        textLocation <-- centre of screen
+        self.__textObject <-- Text object
+        self._listOfTextObjects <-- [self.__textObject]
+    ENDSUBROUTINE
+
+    #Override for performance improvements
+    SUBROUTINE main(self)
+        self._timeSinceLastBackspace <-- self._timeSinceLastBackspace + time since last frame
+
+        self._HandleInputs()
+
+        self._Render()
+        self.__HandleMessages()
+    ENDSUBROUTINE
+
+    SUBROUTINE _Render(self)
+        draw self._backgroundSurface on self._window
+        draw self.__textBox
+        draw self.__opponentTextBox
+        draw self.__textObject
+    ENDSUBROUTINE
+
+    SUBROUTINE SetPreviewText(self, previewText)
+        self.__textBox.previewText <-- previewText
+    ENDSUBROUTINE
+
+    SUBROUTINE __HandleMessages(self)
+        unusedMessages <-- []
+        #Code for receiving messages from server
+        WHILE self.socket.receivedMsgs <> []
+            message <-- self.socket.receivedMsgs.POP(0)
+            IF message[:10] = "!TIMELEFT:" THEN
+                timeLeft <-- message[10:]
+                #Updates timer on screen
+                self.__UpdateTextObject(timeLeft)
+                IF timeLeft = 0 THEN
+                    self.timerFinished <-- True
+                ENDIF
+            ELSE IF message[:17] = "!OTHERPLAYERTEXT:" THEN
+                text <-- message[17:]
+                self.__opponentTextBox.SetText(text)
+            ELSE IF message = "!GAMECOMPLETE" THEN
+                self.socket.msgsToSend.APPEND(f"!FINALTEXT:{self.__textBox.text}")
+                self.timerFinished <-- True
+            ELSE IF message = "!GAMECOMPLETED" THEN
+                self.gameOver <-- True
+            ELSE
+                unusedMessages.APPEND(message)
+            ENDIF
+
+        FOR message IN unusedMessages
+            self.socket.receivedMsgs.APPEND(message)
+        ENDFOR
+    ENDSUBROUTINE
+
+    SUBROUTINE __UpdateTextObject(self, newText)
+        textSize <-- size of newText when rendered
+        textLocation <-- centre of screen
+        self.__textObject.location <-- textLocation
+        self.__textObject.SetText(newText)
+    ENDSUBROUTINE
+
+    SUBROUTINE _HandleInputs(self)
+        FOR event IN events that have happened
+            IF player has quit THEN
+                self.userQuit <-- True
+
+            ELSE IF player has clicked somewhere THEN
+                mousePos <-- position of mouse
+                IF self.__textBox.CheckForCollisionWithMouse(mousePos) THEN
+                    self.__textBox.SetActive()
+                ELSE
+                    self.__textBox.SetInactive()
+                ENDIF
+
+            ELSE IF player pressed a key THEN
+                IF player pressed backspace THEN
+                    self._backspace <-- True
+                    self._timeSinceLastBackspace <-- -200
+                    IF self.__textBox.isActive THEN
+                        self.__textBox.RemoveLetter(self._ctrl)
+                    ENDIF
+                ELSE IF player pressed control THEN
+                    self._ctrl <-- True
+                ELSE
+                    IF self.__textBox.isActive AND input was a letter THEN
+                        self.__textBox.AddLetter(letter player typed)
+                        IF self.__textBox.CheckIfFinished() THEN
+                            self.socket.msgsToSend.APPEND("!FINALTEXT:" + self.__textBox.text)
+                        ELSE 
+                            self.socket.msgsToSend.APPEND("!TEXT:" + self.__textBox.text)
+                        ENDIF
+                    ENDIF
+                ENDIF
+
+            ELSE IF player let go of a key THEN
+                IF key was backspace THEN
+                    self._backspace <-- False
+                ELSE IF key was control THEN
+                    self._ctrl <-- False
+                ENDIF
+            ENDIF
+        ENDFOR
+    ENDSUBROUTINE
+ENDCLASS

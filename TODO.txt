@@ -1,3 +1,4 @@
+Document postgame screen then check if i missed anything
 Documentation
     testing for Text
     Account creation server stuff
