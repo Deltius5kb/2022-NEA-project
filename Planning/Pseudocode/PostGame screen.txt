@@ -1,0 +1,58 @@
+CLASS PostGame(Scene)
+    SUBROUTINE init(self, window, resolution, winloss, winmargin, ELodiff, socket)
+        Inherit from Scene
+
+        colourActive <-- (40,40,40)
+        colourInactive <-- (25,25,25)
+
+        #For button objects
+        self.menuButtonPressed <-- False
+        menuButtonSize <-- (560, 130)
+        menuButtonLocation <-- centred x and y = 800
+        menuButtonRect <-- pygame Rect object
+        self.__menuButton <-- Button object 
+
+        self._listOfButtonObjects <-- [self.__menuButton]
+
+        #For text objects
+        self.__font <-- pygame Font object
+        winlossTextSize <-- size of winloss when rendered
+        winlossTextLocation <-- centred x and y = 140
+
+        self.__winlossText <-- Text object
+        
+        self.__infoFont <-- pygame Font object
+
+        IF winloss = "WIN" THEN
+            infoText1 <-- "Win margin: + winmargin + "letters"
+            infoText2 <-- "ELo gained:" + ELodiff
+        ELSE IF winloss <-- "LOSS" THEN
+            infoText1 <-- "Loss margin: {winmargin} letters"
+            infoText2 <-- "ELo lost: {ELodiff}"
+        else:
+            infoText1 <-- "Win margin:" + winmargin + "letters"
+            infoText2 <-- "ELo gained:" + ELodiff
+
+        infoText1Location <-- (250,400)
+        infoText2Location <-- (250, 480)
+        self.__infoText1 <-- Text object
+        self.__infoText2 <-- Text object
+
+        self._listOfTextObjects <-- [self.__winlossText, self.__infoText1, self.__infoText2]
+    ENDSUBROUTINE
+
+    SUBROUTINE _HandleInputs(self)
+        Inherit from Scene
+        i <-- 0
+        WHILE i < LEN(self._inputHandler.inputsList)
+            IF self._inputHandler.inputsList[i][:6] = "CLICK:" THEN
+                clickLocation <-- split with "," self._inputHandler.inputsList[i][6]
+                IF self.__menuButton.CheckForCollision(clickLocation) THEN
+                    self.menuButtonPressed <-- True
+                    self.__menuButton.clicked <-- True
+                self._inputHandler.inputsList.POP(i)
+            ELSE
+                i <-- i + 1
+            ENDIF
+        ENDWHILE
+ENDCLASS

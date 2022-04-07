@@ -99,8 +99,8 @@ CLASS Race(Stage)
             winner.msgsToSend.Enqueue("!MATCHOUTCOME:WIN")
             loser.msgsToSend.Enqueue("!MATCHOUTCOME:LOSS")
 
-            winner.msgsToSend.Enqueue(f"!MARGIN:{winMargin}")
-            loser.msgsToSend.Enqueue(f"!MARGIN:{winMargin}")
+            winner.msgsToSend.Enqueue("!MARGIN:" + winMargin)
+            loser.msgsToSend.Enqueue("!MARGIN:" + winMargin)
 
             winner.gamesWon <-- winner.gamesWon + 1
             winner.gamesPlayed <-- winner.gamesPlayed + 1

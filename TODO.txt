@@ -1,10 +1,7 @@
-Document postgame screen then check if i missed anything
-Documentation
-    testing for Text
-    Account creation server stuff
-    Scene
-        Need pseudocode for this
-        Need testing
+testing for Text
+Scene
+    Need pseudocode for this
+    Need testing
 
 testing for database handler in general
 testing for Text
