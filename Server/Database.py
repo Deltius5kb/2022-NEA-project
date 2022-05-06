@@ -193,16 +193,16 @@ class DatabaseHandler:
 # # player.username = "Username0"
 
 # # dbHandler.LoadUser(player)
-dbHandler = DatabaseHandler()
+# dbHandler = DatabaseHandler()
 
-player1 = Player(None, None)
-player1.username = "300"
-player1.Elo = 300
-player2 = Player(None, None)
-player2.username = "900"
-player2.Elo = 900
+# player1 = Player(None, None)
+# player1.username = "300"
+# player1.Elo = 300
+# player2 = Player(None, None)
+# player2.username = "900"
+# player2.Elo = 900
 
-dbHandler.CreateNewUser("900", "900")
+# dbHandler.CreateNewUser("900", "900")
 
-dbHandler.SaveUser(player1)
-dbHandler.SaveUser(player2)
+# dbHandler.SaveUser(player1)
+# dbHandler.SaveUser(player2)
